@@ -5,7 +5,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // Must be before routes
+app.use(express.json()); 
 
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
@@ -17,9 +17,7 @@ if (!MONGO_URI) {
 
 let db, lessonsCollection, ordersCollection;
 
-// -----------------------------------------
-// CONNECT TO MONGO ATLAS
-// -----------------------------------------
+
 MongoClient.connect(MONGO_URI)
   .then(client => {
     console.log("✅ Connected to MongoDB Atlas");
@@ -35,9 +33,7 @@ MongoClient.connect(MONGO_URI)
     process.exit(1);
   });
 
-// -----------------------------------------
-// GET ALL LESSONS
-// -----------------------------------------
+
 app.get('/api/lessons', async (req, res) => {
   try {
     const lessons = await lessonsCollection.find().toArray();
@@ -47,9 +43,7 @@ app.get('/api/lessons', async (req, res) => {
   }
 });
 
-// -----------------------------------------
-// GET ONE LESSON
-// -----------------------------------------
+
 app.get('/api/lessons/:id', async (req, res) => {
   try {
     const lesson = await lessonsCollection.findOne({ _id: new ObjectId(req.params.id) });
@@ -60,9 +54,7 @@ app.get('/api/lessons/:id', async (req, res) => {
   }
 });
 
-// -----------------------------------------
-// SEARCH LESSONS
-// -----------------------------------------
+
 app.get('/api/search', async (req, res) => {
   try {
     const q = (req.query.q || "").trim();
@@ -79,9 +71,7 @@ app.get('/api/search', async (req, res) => {
   }
 });
 
-// -----------------------------------------
-// SEED SAMPLE LESSONS
-// -----------------------------------------
+
 app.post('/api/seed', async (req, res) => {
   try {
     const sample = [
@@ -99,9 +89,7 @@ app.post('/api/seed', async (req, res) => {
   }
 });
 
-// -----------------------------------------
-// CREATE ORDER (with inventory check/update)
-// -----------------------------------------
+
 app.post('/api/orders', async (req, res) => {
   try {
     const { name, phoneNumber, address, city, state, zip, lessonIDs, numberOfSpaces } = req.body;
@@ -110,14 +98,14 @@ app.post('/api/orders', async (req, res) => {
       return res.status(400).json({ error: "All fields are required." });
     }
 
-    // Map of lessonID → quantity
+   
     const lessonCountMap = {};
     for (const id of lessonIDs) lessonCountMap[id] = (lessonCountMap[id] || 0) + 1;
 
     const objectIds = Object.keys(lessonCountMap).map(id => new ObjectId(id));
     const lessons = await lessonsCollection.find({ _id: { $in: objectIds } }).toArray();
 
-    // Check availability
+    
     for (const lesson of lessons) {
       const needed = lessonCountMap[lesson._id.toString()];
       if (lesson.availableInventory < needed) {
@@ -127,7 +115,7 @@ app.post('/api/orders', async (req, res) => {
       }
     }
 
-    // Reduce inventory
+  
     for (const lesson of lessons) {
       const needed = lessonCountMap[lesson._id.toString()];
       await lessonsCollection.updateOne({ _id: lesson._id }, { $inc: { availableInventory: -needed } });
@@ -163,9 +151,7 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-// -----------------------------------------
-// UPDATE ANY LESSON FIELD
-// -----------------------------------------
+
 app.put('/api/lessons/:id', async (req, res) => {
   try {
     const lessonId = req.params.id;
