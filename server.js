@@ -160,16 +160,23 @@ app.put('/api/lessons/:id', async (req, res) => {
     const result = await lessonsCollection.findOneAndUpdate(
       { _id: new ObjectId(lessonId) },
       { $set: updatedFields },
-      { returnDocument: "after" }
+      {
+        returnDocument: "after",
+        upsert: false   // ← IMPORTANT FIX
+      }
     );
 
-    if (!result.value) return res.status(404).json({ error: "Lesson not found." });
+    if (!result.value) {
+      return res.status(404).json({ error: "Lesson not found." });
+    }
 
     res.json({
       message: "Lesson updated.",
       lesson: result.value
     });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
